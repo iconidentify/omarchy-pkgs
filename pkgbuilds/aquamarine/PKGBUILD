@@ -1,0 +1,61 @@
+# Maintainer: Caleb Maclennan <caleb@alerque.com>
+# Contributor: Aaron Blasko <blaskoazzolaaaron [at] gmail.com>
+#
+# Aquamarine 0.15.1 with Apple display CRTC rescans and released-connector
+# guards for async-event flush and atomic modeset retry during teardown.
+
+pkgname=aquamarine
+pkgver=0.15.1
+pkgrel=1.2
+pkgdesc='a very light linux rendering backend library'
+arch=(aarch64)
+url="https://github.com/hyprwm/$pkgname"
+license=(BSD-3-Clause)
+depends=(libgcc
+         libstdc++
+         glibc # libc.so libm.so
+         hyprutils libhyprutils.so
+         libdisplay-info libdisplay-info.so
+         libdrm # libdrm.so
+         libglvnd libEGL.so
+         libinput # libinput.so
+         mesa # libgbm.so
+         opengl-driver
+         pixman
+         seatd libseat.so
+         systemd-libs libudev.so
+         wayland libwayland-client.so
+         wayland-protocols)
+makedepends=(cmake
+             hyprwayland-scanner)
+provides=("lib$pkgname.so")
+_archive="$pkgname-$pkgver"
+source=("$url/archive/v$pkgver/$_archive.tar.gz"
+        0001-drm-re-read-possible-CRTCs-when-rescanning-connectors.patch
+        0002-drm-fix-crash-on-null-connector-in-flush.patch
+        0003-drm-skip-released-connectors-during-atomic-restatement.patch)
+sha256sums=('2f9de98c0bd1b7b1b09c576e390a2fef436449762fb334163c414f0c300296f2'
+            '50e9e38ff915b18074dc9b5dd1d07d7f24e340e99f254476d6abe578eece7864'
+            '8779ad86323997bdf3fabe681df9d613acd25218542ea0ce11a052df316d6766'
+            '6daa8de1a25f19d5a465dcfe237ba41237497783accc87b3944d948551442b7e')
+
+prepare() {
+	cd "$_archive"
+	patch -Np1 -i ../0001-drm-re-read-possible-CRTCs-when-rescanning-connectors.patch
+}
+
+build() {
+	cd "$_archive"
+	# Give the guest compiler enough stack for DRM.cpp under QEMU.
+	export QEMU_STACK_SIZE=64M
+	cmake -B build \
+		-D CMAKE_INSTALL_PREFIX=/usr \
+		-D CMAKE_BUILD_TYPE=Release
+	cmake --build build
+}
+
+package() {
+	cd "$_archive"
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm0644 -t "$pkgdir/usr/share/licenses/$pkgname" LICENSE
+}
