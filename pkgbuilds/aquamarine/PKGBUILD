@@ -6,7 +6,7 @@
 
 pkgname=aquamarine
 pkgver=0.15.1
-pkgrel=1.2
+pkgrel=1.3
 pkgdesc='a very light linux rendering backend library'
 arch=(aarch64)
 url="https://github.com/hyprwm/$pkgname"
@@ -54,6 +54,50 @@ build() {
 		-D CMAKE_INSTALL_PREFIX=/usr \
 		-D CMAKE_BUILD_TYPE=Release
 	cmake --build build --parallel 4
+	_check_library_load
+}
+
+_check_library_load() {
+	local build_dir="$srcdir/$_archive/build"
+	local library="$build_dir/libaquamarine.so"
+	local report="$build_dir/library-relocations.log"
+	env -u LD_PRELOAD LC_ALL=C ldd -r "$library" > "$report" 2>&1 || {
+		cat "$report" >&2
+		return 1
+	}
+	if grep -Eq 'not found|undefined symbol' "$report"; then
+		cat "$report" >&2
+		return 1
+	fi
+	echo 'aquamarine-library-relocations=pass'
+	cat > "$build_dir/library-load.c" <<'EOF' || return 1
+#include <dlfcn.h>
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+    if (argc != 2)
+        return 2;
+    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!library) {
+        fprintf(stderr, "%s\n", dlerror());
+        return 1;
+    }
+    if (dlclose(library)) {
+        fprintf(stderr, "%s\n", dlerror());
+        return 1;
+    }
+    puts("aquamarine-library-load=pass");
+    return 0;
+}
+EOF
+	${CC:-cc} -Wall -Wextra -Werror "$build_dir/library-load.c" \
+		-o "$build_dir/library-load" -ldl || return 1
+	env -u LD_PRELOAD "$build_dir/library-load" "$library"
+}
+
+check() {
+	_check_library_load
 }
 
 package() {
