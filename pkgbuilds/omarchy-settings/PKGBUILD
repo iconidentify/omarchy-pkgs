@@ -74,6 +74,7 @@ backup=(
   'etc/systemd/user.conf.d/20-omarchy-nofile.conf'
   'etc/sddm.conf.d/10-theme.conf'
   'etc/sddm.conf.d/10-wayland.conf'
+  'etc/sddm.conf.d/90-session-lock-recovery.conf'
   'etc/udev/rules.d/60-omarchy-io-scheduler.rules'
   'etc/udev/rules.d/99-omarchy-power-profile.rules'
   'etc/udev/rules.d/99-omarchy-wifi-powersave.rules'
@@ -342,6 +343,10 @@ EOF
   install -Dm644 default/sddm/hyprland.lua "$pkgdir/usr/share/sddm/hyprland.lua"
   install -Dm644 default/wayland-sessions/omarchy.desktop \
     "$pkgdir/usr/local/share/wayland-sessions/omarchy.desktop"
+  if [[ -f default/wayland-sessions/omarchy-guarded-hyprland.desktop ]]; then
+    install -Dm644 default/wayland-sessions/omarchy-guarded-hyprland.desktop \
+      "$pkgdir/usr/local/share/wayland-sessions/omarchy-guarded-hyprland.desktop"
+  fi
 
   # Plymouth theme. Files at 0644, dirs at 0755 (the upstream plymouth
   # package's convention for /usr/share/plymouth/themes/*). cp -a inherits
