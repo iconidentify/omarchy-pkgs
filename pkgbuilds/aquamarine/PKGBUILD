@@ -42,6 +42,8 @@ sha256sums=('2f9de98c0bd1b7b1b09c576e390a2fef436449762fb334163c414f0c300296f2'
 prepare() {
 	cd "$_archive"
 	patch -Np1 -i ../0001-drm-re-read-possible-CRTCs-when-rescanning-connectors.patch
+	patch -Np1 -i ../0002-drm-fix-crash-on-null-connector-in-flush.patch
+	patch -Np1 -i ../0003-drm-skip-released-connectors-during-atomic-restatement.patch
 }
 
 build() {
