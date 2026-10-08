@@ -10,10 +10,10 @@
 #    provenance only (empty when cut from a bare commit). omarchy and
 #    omarchy-settings must always carry identical _tag/_commit/pkgver/sha256sums.
 pkgname='omarchy'
-_tag='v4.0.4'
-_commit='c668141e9c42b13c80c9ca4ea108e11708c5e8a5'
+_tag=''
+_commit='5d81e630a902cb0b413a69b6c69b217bf59173ee'
 pkgver=4.0.4
-pkgrel=1
+pkgrel=2
 pkgdesc='Beautiful, modern, and opinionated Arch Linux by DHH'
 # The payload is architecture-independent, but the dependency set is not: the
 # boot stack differs per architecture (see depends_x86_64 / depends_aarch64),
@@ -32,13 +32,14 @@ depends=(
   # package satisfy it, leaving a mixed dev/stable install. A versioned
   # dependency can only be satisfied by the real omarchy-settings built
   # from the same _commit, and forces the pair to upgrade together.
-  "omarchy-settings=${pkgver}"
+  "omarchy-settings=${pkgver}-${pkgrel}"
 
   # Wayland / Hyprland core
   'hyprland'
   'quickshell'
   'uwsm'
   'sddm'
+  'python'
   'xdg-desktop-portal-hyprland'
 
   # Audio / auth / portal essentials
@@ -93,8 +94,8 @@ if [[ -n "${OMARCHY_SRC:-}" ]]; then
   source=()
   sha256sums=()
 else
-  source=("omarchy::git+https://github.com/basecamp/omarchy.git#commit=${_commit}")
-  sha256sums=('8371b148aa06e9d0627c9e11668ef2dfdf54c4a9e5ffbee5aee08c3945073618')
+  source=("omarchy-${_commit}.tar.gz::https://github.com/iconidentify/omarchy/archive/${_commit}.tar.gz")
+  sha256sums=('f852cd5792a693dd2ecd56b8e182d8debcf67658de6ba59734124e8d0a699034')
 fi
 
 prepare() {
@@ -102,6 +103,9 @@ prepare() {
     rm -rf "$srcdir/omarchy"
     mkdir -p "$srcdir/omarchy"
     cp -a "${OMARCHY_SRC}/." "$srcdir/omarchy/"
+  else
+    rm -rf "$srcdir/omarchy"
+    mv "$srcdir/omarchy-${_commit}" "$srcdir/omarchy"
   fi
 }
 
@@ -134,6 +138,9 @@ package() {
   install -Dm644 default/libalpm/hooks/00-omarchy-update-guard.hook "$pkgdir/usr/share/libalpm/hooks/00-omarchy-update-guard.hook"
   install -Dm644 default/libalpm/hooks/10-omarchy-hyprland-reload-pause.hook "$pkgdir/usr/share/libalpm/hooks/10-omarchy-hyprland-reload-pause.hook"
   install -Dm644 default/libalpm/hooks/90-omarchy-hyprland-reload-resume.hook "$pkgdir/usr/share/libalpm/hooks/90-omarchy-hyprland-reload-resume.hook"
+  if [[ -f default/libalpm/hooks/95-omarchy-session-guard.hook ]]; then
+    install -Dm644 default/libalpm/hooks/95-omarchy-session-guard.hook "$pkgdir/usr/share/libalpm/hooks/95-omarchy-session-guard.hook"
+  fi
 
   # Target-side setup scripts and package lists used by ISO finalization,
   # first login, future users, migrations, and reinstall/reset commands.

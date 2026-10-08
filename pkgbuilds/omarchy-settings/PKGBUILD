@@ -10,10 +10,10 @@
 #    provenance only (empty when cut from a bare commit). omarchy and
 #    omarchy-settings must always carry identical _tag/_commit/pkgver/sha256sums.
 pkgname='omarchy-settings'
-_tag='v4.0.4'
-_commit='c668141e9c42b13c80c9ca4ea108e11708c5e8a5'
+_tag=''
+_commit='5d81e630a902cb0b413a69b6c69b217bf59173ee'
 pkgver=4.0.4
-pkgrel=1
+pkgrel=2
 pkgdesc='Omarchy user defaults, /etc/skel content, fonts, plymouth theme, and support helpers'
 # Arch-specific because the shipped /etc tree is not the same on every
 # architecture: the Limine, mkinitcpio, zram and oomd drop-ins belong to the
@@ -74,6 +74,7 @@ backup=(
   'etc/systemd/user.conf.d/20-omarchy-nofile.conf'
   'etc/sddm.conf.d/10-theme.conf'
   'etc/sddm.conf.d/10-wayland.conf'
+  'etc/sddm.conf.d/90-session-lock-recovery.conf'
   'etc/udev/rules.d/60-omarchy-io-scheduler.rules'
   'etc/udev/rules.d/99-omarchy-power-profile.rules'
   'etc/udev/rules.d/99-omarchy-wifi-powersave.rules'
@@ -124,8 +125,8 @@ if [[ -n "${OMARCHY_SRC:-}" ]]; then
   source=()
   sha256sums=()
 else
-  source=("omarchy::git+https://github.com/basecamp/omarchy.git#commit=${_commit}")
-  sha256sums=('8371b148aa06e9d0627c9e11668ef2dfdf54c4a9e5ffbee5aee08c3945073618')
+  source=("omarchy-${_commit}.tar.gz::https://github.com/iconidentify/omarchy/archive/${_commit}.tar.gz")
+  sha256sums=('f852cd5792a693dd2ecd56b8e182d8debcf67658de6ba59734124e8d0a699034')
 fi
 
 prepare() {
@@ -133,6 +134,9 @@ prepare() {
     rm -rf "$srcdir/omarchy"
     mkdir -p "$srcdir/omarchy"
     cp -a "${OMARCHY_SRC}/." "$srcdir/omarchy/"
+  else
+    rm -rf "$srcdir/omarchy"
+    mv "$srcdir/omarchy-${_commit}" "$srcdir/omarchy"
   fi
 }
 
@@ -189,6 +193,10 @@ package() {
   install -Dm644 default/systemd/user/omarchy-tailscale-receive.service "$pkgdir/usr/lib/systemd/user/omarchy-tailscale-receive.service"
   install -Dm644 default/systemd/user/omarchy-fcitx5.service "$pkgdir/usr/lib/systemd/user/omarchy-fcitx5.service"
   install -Dm644 default/systemd/user/omarchy-crash-watch.service "$pkgdir/usr/lib/systemd/user/omarchy-crash-watch.service"
+  if [[ -f default/systemd/user/wayland-wm@hyprland.desktop.service.d/99-session-lock-recovery.conf ]]; then
+    install -Dm644 default/systemd/user/wayland-wm@hyprland.desktop.service.d/99-session-lock-recovery.conf \
+      "$pkgdir/usr/lib/systemd/user/wayland-wm@hyprland.desktop.service.d/99-session-lock-recovery.conf"
+  fi
   # Marks app.slice (and only app.slice) as a systemd-oomd kill candidate, so
   # memory pressure costs one app scope instead of the compositor session.
   # Thresholds live in etc/systemd/oomd.conf.d/10-omarchy.conf. Both this and
@@ -342,6 +350,10 @@ EOF
   install -Dm644 default/sddm/hyprland.lua "$pkgdir/usr/share/sddm/hyprland.lua"
   install -Dm644 default/wayland-sessions/omarchy.desktop \
     "$pkgdir/usr/local/share/wayland-sessions/omarchy.desktop"
+  if [[ -f default/wayland-sessions/omarchy-guarded-hyprland.desktop ]]; then
+    install -Dm644 default/wayland-sessions/omarchy-guarded-hyprland.desktop \
+      "$pkgdir/usr/local/share/wayland-sessions/omarchy-guarded-hyprland.desktop"
+  fi
 
   # Plymouth theme. Files at 0644, dirs at 0755 (the upstream plymouth
   # package's convention for /usr/share/plymouth/themes/*). cp -a inherits
