@@ -1,0 +1,26 @@
+From c586e48a8b73b245056a2dd915d5d054dafb0258 Mon Sep 17 00:00:00 2001
+From: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+Date: Thu, 8 Oct 2026 02:02:45 -0700
+Subject: [PATCH] drm: skip released connectors during atomic restatement
+
+Signed-off-by: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+---
+ src/backend/drm/impl/Atomic.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/backend/drm/impl/Atomic.cpp b/src/backend/drm/impl/Atomic.cpp
+index e47781b..ec0c92f 100644
+--- a/src/backend/drm/impl/Atomic.cpp
++++ b/src/backend/drm/impl/Atomic.cpp
+@@ -85,7 +85,7 @@ bool Aquamarine::CDRMAtomicRequest::restateConnectors(SP<SDRMConnector> self) {
+     bool any = false;
+ 
+     for (const auto& c : backend->connectors) {
+-        if (c == self || !c->crtc || !c->output)
++        if (!c || c == self || !c->crtc || !c->output)
+             continue;
+ 
+         if (!c->output->enabledState)
+-- 
+2.55.0
+
